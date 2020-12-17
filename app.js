@@ -11,6 +11,8 @@ const cartContent = document.querySelector(".cart-content");
 const productsDOM = document.querySelector(".products-center");
 // cart
 let cart = [];
+//buttons
+let buttonsDOM = [];
 
 // getting the products
 // async/await returns a promise; "await" waits  until promise is settled and the returns result
@@ -60,20 +62,60 @@ class UI {
     productsDOM.innerHTML = result;
   }
   getBagButtons() {
-    const buttons = [...document.querySelectorAll(".bag-btn")]; //turns into an array and not a nodelist
+    const buttons = [...document.querySelectorAll(".bag-btn")]; //turns into an array of all the product buttons and not a nodelist
+    buttonsDOM = buttons;
     buttons.forEach((button) => {
       let id = button.dataset.id;
       let inCart = cart.find((item) => item.id === id);
       if (inCart) {
         button.innerText = "In Cart";
         button.diabled = true;
-      } else {
-        button.addEventListener("click", (event) => {
-          event.target.innerText = "In Cart";
-          event.target.disabled = true;
-        });
       }
+      button.addEventListener("click", (event) => {
+        event.target.innerText = "In Cart";
+        event.target.disabled = true;
+        // get product from products
+        // an object from which we are returning all properties & adding "amount" property
+        let cartItem = { ...Storage.getProduct(id), amount: 1 };
+        // add product to the cart
+        cart = [...cart, cartItem];
+        // save cart in local storage
+        Storage.saveCart(cart);
+        // set cart values using updated cart values
+        this.setCartValues(cart);
+        // display cart item in the DOM
+        this.addCartItem(cartItem);
+        // show the cart and overlay
+      });
     });
+  }
+  setCartValues(cart) {
+    let tempTotal = 0; // dollar value of all items in cart
+    let itemsTotal = 0; // number of items in cart
+    cart.map((item) => {
+      tempTotal += item.price * item.amount;
+      itemsTotal += item.amount;
+    });
+    cartItems.innerText = itemsTotal;
+    cartTotal.innerText = parseFloat(tempTotal.toFixed(2));
+    console.log();
+  }
+  addCartItem(item) {
+    const div = document.createElement("div");
+    div.classList.add("cart-item");
+    div.innerHTML = `<img src=${item.image} alt="product" />
+    <div>
+      <h4>${item.title}</h4>
+      <h5>$${item.price}</h5>
+      <span class="remove-item" data-id=${item.id}>remove</span>
+    </div>
+    <div>
+      <i class="fas fa-chevron-up" data-id=${item.id} ></i>
+      <p class="item-amount">${item.amount}</p>
+      <i class="fas fa-chevron-down"data-id=${item.id} ></i>
+    </div>`;
+    cartContent.appendChild(div);
+    console.log(cartContent);
   }
 }
 // we could just get each single item from contentful when adding to cart but
@@ -82,6 +124,13 @@ class UI {
 class Storage {
   static saveProducts(products) {
     localStorage.setItem("products", JSON.stringify(products));
+  }
+  static getProduct(id) {
+    let products = JSON.parse(localStorage.getItem("products")); //returns array from localstorage
+    return products.find((product) => product.id === id);
+  }
+  static saveCart(cart) {
+    localStorage.setItem("cart", JSON.stringify(cart));
   }
 }
 
