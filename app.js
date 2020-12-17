@@ -59,16 +59,46 @@ class UI {
     });
     productsDOM.innerHTML = result;
   }
+  getBagButtons() {
+    const buttons = [...document.querySelectorAll(".bag-btn")]; //turns into an array and not a nodelist
+    buttons.forEach((button) => {
+      let id = button.dataset.id;
+      let inCart = cart.find((item) => item.id === id);
+      if (inCart) {
+        button.innerText = "In Cart";
+        button.diabled = true;
+      } else {
+        button.addEventListener("click", (event) => {
+          event.target.innerText = "In Cart";
+          event.target.disabled = true;
+        });
+      }
+    });
+  }
 }
-
-// local storage
-
-class Storage {}
+// we could just get each single item from contentful when adding to cart but
+// we will be retrieving from local storage
+// static method can be used without instantiating the class
+class Storage {
+  static saveProducts(products) {
+    localStorage.setItem("products", JSON.stringify(products));
+  }
+}
 
 document.addEventListener("DOMContentLoaded", () => {
   const ui = new UI();
   const products = new Products();
 
   // get all products
-  products.getProducts().then((products) => ui.displayProducts(products));
+  products
+    .getProducts()
+    .then((products) => {
+      ui.displayProducts(products);
+      // store products in local storage
+      Storage.saveProducts(products);
+    })
+    .then(() => {
+      //
+      ui.getBagButtons();
+    });
 });
