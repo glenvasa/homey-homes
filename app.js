@@ -51,7 +51,7 @@ class UI {
           />
           <button class="bag-btn" data-id=${product.id}>
             <i class="fas fa-shopping-cart"></i>
-            add to bag
+            add to cart
           </button>
         </div>
         <h3>${product.title}</h3>
@@ -62,7 +62,7 @@ class UI {
     productsDOM.innerHTML = result;
   }
   getBagButtons() {
-    const buttons = [...document.querySelectorAll(".bag-btn")]; //turns into an array of all the product buttons and not a nodelist
+    const buttons = [...document.querySelectorAll(".bag-btn")]; //spread operator turns into an array of all the product buttons and not a nodelist
     buttonsDOM = buttons;
     buttons.forEach((button) => {
       let id = button.dataset.id;
@@ -86,6 +86,7 @@ class UI {
         // display cart item in the DOM
         this.addCartItem(cartItem);
         // show the cart and overlay
+        this.showCart();
       });
     });
   }
@@ -115,7 +116,51 @@ class UI {
       <i class="fas fa-chevron-down"data-id=${item.id} ></i>
     </div>`;
     cartContent.appendChild(div);
-    console.log(cartContent);
+  }
+  showCart() {
+    cartOverlay.classList.add("transparentBcg");
+    cartDOM.classList.add("showCart");
+  }
+  setupAPP() {
+    cart = Storage.getCart();
+    this.setCartValues(cart);
+    this.populateCart(cart);
+    cartBtn.addEventListener("click", this.showCart);
+    closeCartBtn.addEventListener("click", this.hideCart);
+  }
+  populateCart(cart) {
+    cart.forEach((item) => this.addCartItem(item));
+  }
+  hideCart() {
+    cartOverlay.classList.remove("transparentBcg");
+    cartDOM.classList.remove("showCart");
+  }
+  cartLogic() {
+    // clear cart button
+    clearCartBtn.addEventListener("click", () => {
+      //can't just use this.clearCart() as callback function because it will point to the button and not the UI class
+      this.clearCart();
+    });
+    // cart functionality
+  }
+  clearCart() {
+    let cartItems = cart.map((item) => item.id);
+    cartItems.forEach((id) => this.removeItem(id));
+    while (cartContent.children.length > 0) {
+      cartContent.removeChild(cartContent.children[0]);
+    }
+    this.hideCart();
+  }
+  removeItem(id) {
+    cart = cart.filter((item) => item.id !== id);
+    this.setCartValues(cart);
+    Storage.saveCart(cart);
+    let button = this.getSingleButton(id);
+    button.disabled = false;
+    button.innerHTML = `<i class="fas fa-shopping-cart"></i>add to cart`;
+  }
+  getSingleButton(id) {
+    return buttonsDOM.find((button) => button.dataset.id === id);
   }
 }
 // we could just get each single item from contentful when adding to cart but
@@ -132,11 +177,19 @@ class Storage {
   static saveCart(cart) {
     localStorage.setItem("cart", JSON.stringify(cart));
   }
+  static getCart() {
+    return localStorage.getItem("cart")
+      ? JSON.parse(localStorage.getItem("cart"))
+      : [];
+  }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   const ui = new UI();
   const products = new Products();
+
+  // setup app
+  ui.setupAPP();
 
   // get all products
   products
@@ -147,7 +200,7 @@ document.addEventListener("DOMContentLoaded", () => {
       Storage.saveProducts(products);
     })
     .then(() => {
-      //
       ui.getBagButtons();
+      ui.cartLogic();
     });
 });
