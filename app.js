@@ -99,7 +99,6 @@ class UI {
     });
     cartItems.innerText = itemsTotal;
     cartTotal.innerText = parseFloat(tempTotal.toFixed(2));
-    console.log();
   }
   addCartItem(item) {
     const div = document.createElement("div");
@@ -142,6 +141,35 @@ class UI {
       this.clearCart();
     });
     // cart functionality
+    cartContent.addEventListener("click", (event) => {
+      if (event.target.classList.contains("remove-item")) {
+        let removeItem = event.target;
+        let id = removeItem.dataset.id;
+        cartContent.removeChild(removeItem.parentElement.parentElement); //removes parent of parent of removeItem from DOM
+        this.removeItem(id); // removes item from cart but not DOM
+      } else if (event.target.classList.contains("fa-chevron-up")) {
+        let addAmount = event.target;
+        let id = addAmount.dataset.id;
+        let tempItem = cart.find((item) => item.id === id);
+        tempItem.amount += 1;
+        Storage.saveCart(cart);
+        this.setCartValues(cart);
+        addAmount.nextElementSibling.innerText = tempItem.amount;
+      } else if (event.target.classList.contains("fa-chevron-down")) {
+        let reduceAmount = event.target;
+        let id = reduceAmount.dataset.id;
+        let tempItem = cart.find((item) => item.id === id);
+        tempItem.amount -= 1;
+        if (tempItem.amount > 0) {
+          Storage.saveCart(cart);
+          this.setCartValues(cart);
+          reduceAmount.previousElementSibling.innerText = tempItem.amount;
+        } else {
+          cartContent.removeChild(reduceAmount.parentElement.parentElement);
+          this.removeItem(id);
+        }
+      }
+    });
   }
   clearCart() {
     let cartItems = cart.map((item) => item.id);
